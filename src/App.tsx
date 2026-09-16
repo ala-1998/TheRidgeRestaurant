@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 
 /* ==========================================================================
-   MENU DATA (unchanged - same as before)
+   MENU DATA
    ========================================================================== */
 export interface MenuItem {
   id: string;
@@ -131,7 +131,7 @@ function useScrollProgress() {
 /* ==========================================================================
    REUSABLE ANIMATED COMPONENTS
    ========================================================================== */
-const RevealWrapper: React.FC<{ children: React.ReactNode; delay?: number; className?: string }> = 
+const RevealWrapper: React.FC<{ children: React.ReactNode; delay?: number; className?: string }> =
   ({ children, delay = 0, className = '' }) => {
     const { ref, isVisible } = useScrollReveal();
     return (
@@ -148,6 +148,142 @@ const RevealWrapper: React.FC<{ children: React.ReactNode; delay?: number; class
       </div>
     );
   };
+
+/* ==========================================================================
+   AUTO-SCROLL CATEGORY CAROUSEL
+   Défilement automatique infini + swipe manuel + pause au toucher
+   ========================================================================== */
+const CategoryCarousel: React.FC<{
+  categories: Category[];
+  selectedCategory: string;
+  onSelect: (id: string) => void;
+}> = ({ categories, selectedCategory, onSelect }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const animationRef = useRef<number>();
+  const scrollPosRef = useRef(0);
+  const resumeTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const hasInitializedRef = useRef(false);
+
+  // 3 copies pour scroll infini fluide dans les deux sens
+  const duplicatedCategories = useMemo(
+    () => [...categories, ...categories, ...categories],
+    [categories]
+  );
+
+  // Animation auto-scroll
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const speed = 0.4; // px par frame — très doux
+
+    const animate = () => {
+      if (!isPaused && el) {
+        scrollPosRef.current += speed;
+
+        const oneSetWidth = el.scrollWidth / 3;
+
+        // Reset invisible quand on dépasse la 2ème copie
+        if (scrollPosRef.current >= oneSetWidth * 2) {
+          scrollPosRef.current -= oneSetWidth;
+        }
+        // Reset inverse si on remonte trop
+        if (scrollPosRef.current <= 0) {
+          scrollPosRef.current += oneSetWidth;
+        }
+
+        el.scrollLeft = scrollPosRef.current;
+      }
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, [isPaused]);
+
+  // Sync position quand l'utilisateur scrolle manuellement
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      scrollPosRef.current = scrollRef.current.scrollLeft;
+    }
+  };
+
+  // Pause temporaire + reprise auto
+  const pauseTemporarily = () => {
+    setIsPaused(true);
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = setTimeout(() => setIsPaused(false), 3000);
+  };
+
+  // Position initiale au milieu (set #2)
+  useEffect(() => {
+    if (hasInitializedRef.current) return;
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const init = () => {
+      const oneSetWidth = el.scrollWidth / 3;
+      if (oneSetWidth > 0) {
+        el.scrollLeft = oneSetWidth;
+        scrollPosRef.current = oneSetWidth;
+        hasInitializedRef.current = true;
+      } else {
+        // retry si le DOM n'est pas encore prêt
+        setTimeout(init, 50);
+      }
+    };
+    init();
+  }, []);
+
+  return (
+    <div className="relative group/carousel">
+      {/* Fade edges */}
+      <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-[#071712] via-[#071712]/80 to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-[#071712] via-[#071712]/80 to-transparent z-10 pointer-events-none" />
+
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        onMouseEnter={pauseTemporarily}
+        onMouseLeave={pauseTemporarily}
+        onTouchStart={pauseTemporarily}
+        onTouchEnd={pauseTemporarily}
+        onWheel={pauseTemporarily}
+        className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1.5"
+        style={{ scrollBehavior: 'auto' }}
+      >
+        {duplicatedCategories.map((cat, idx) => {
+          const isActive = selectedCategory === cat.id;
+          return (
+            <button
+              key={`${cat.id}-${idx}`}
+              onClick={() => {
+                pauseTemporarily();
+                onSelect(cat.id);
+              }}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-300 shrink-0 cursor-pointer ${
+                isActive
+                  ? 'bg-gradient-to-r from-[#d4af6a] to-[#e8d3a0] text-[#0a1f18] font-semibold shadow-lg shadow-[#d4af6a]/30 scale-105'
+                  : 'bg-[#0d251c] text-[#a8c4b8] hover:bg-[#163c30] hover:text-white border border-[#1f4a3b] hover:border-[#d4af6a]/40'
+              }`}
+            >
+              {cat.name}
+              {cat.isSpecialCard && (
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  isActive ? 'bg-[#0a1f18]' : 'bg-[#d4af6a] animate-pulse'
+                }`} />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 /* ==========================================================================
    MAIN APP
@@ -282,19 +418,11 @@ export default function App() {
           0%, 100% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
         }
-        @keyframes ripple {
-          to { transform: scale(4); opacity: 0; }
-        }
-        @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
         
         .animate-float { animation: float 3s ease-in-out infinite; }
         .animate-pulse-glow { animation: pulse-glow 2s infinite; }
         .animate-slide-up { animation: slide-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
         .animate-scale-in { animation: scale-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
-        .animate-spin-slow { animation: spin-slow 8s linear infinite; }
         
         .shimmer-text {
           background: linear-gradient(90deg, #d4af6a 0%, #f5e6c0 50%, #d4af6a 100%);
@@ -336,25 +464,6 @@ export default function App() {
         .card-glow:hover {
           transform: translateY(-2px);
           box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(212, 175, 106, 0.15);
-        }
-        
-        .mountain-parallax {
-          transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        
-        .btn-ripple { position: relative; overflow: hidden; }
-        .btn-ripple::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(circle, rgba(255,255,255,0.4) 10%, transparent 10%);
-          transform: scale(0);
-          opacity: 0;
-        }
-        .btn-ripple:active::after {
-          transform: scale(4);
-          opacity: 1;
-          transition: transform 0.4s, opacity 0.8s;
         }
         
         .gradient-border {
@@ -416,11 +525,9 @@ export default function App() {
           background: 'radial-gradient(ellipse at top, #0f3628 0%, #071712 60%, #050f0b 100%)'
         }}
       >
-        {/* Ambient glow orbs */}
         <div className="absolute top-10 left-1/4 w-72 h-72 rounded-full bg-[#d4af6a]/5 blur-3xl pointer-events-none animate-float" />
         <div className="absolute bottom-10 right-1/4 w-64 h-64 rounded-full bg-emerald-500/5 blur-3xl pointer-events-none animate-float" style={{ animationDelay: '1.5s' }} />
 
-        {/* Dotted pattern */}
         <div
           className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{
@@ -430,7 +537,6 @@ export default function App() {
         />
 
         <div className="relative max-w-3xl mx-auto flex flex-col items-center text-center">
-          {/* Animated Mountains */}
           <div className="mb-6 animate-float">
             <svg className="w-24 h-20" viewBox="0 0 100 80" fill="none">
               <defs>
@@ -452,7 +558,6 @@ export default function App() {
             </svg>
           </div>
 
-          {/* Title */}
           <div className="relative inline-block mb-4">
             <h1 className="font-cinzel text-4xl sm:text-5xl md:text-6xl tracking-[0.18em] font-bold text-[#faf4e3] uppercase drop-shadow-[0_2px_20px_rgba(212,175,106,0.3)]">
               The Ridge
@@ -464,12 +569,10 @@ export default function App() {
             </div>
           </div>
 
-          {/* Tagline */}
           <p className="font-garamond italic text-[#a8c4b8] text-base sm:text-xl max-w-md mt-2 mb-7 leading-relaxed">
             Gastronomie méditerranéenne &amp; spécialités terre-mer au cœur des hauteurs
           </p>
 
-          {/* Info pills */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full max-w-xl text-left glass border border-[#1f4a3b]/60 rounded-2xl p-3.5 shadow-2xl shadow-black/40 animate-slide-up">
             <div className="flex items-center gap-3 px-2 py-1.5 group">
               <div className="p-2 rounded-xl bg-[#184033] text-[#d4af6a] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
@@ -502,7 +605,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Daily Special Banner */}
           <div className="mt-5 w-full max-w-xl rounded-2xl p-[1px] gradient-border animate-slide-up" style={{ animationDelay: '0.2s' }}>
             <div className="bg-gradient-to-r from-[#0f2f24] via-[#1a4033] to-[#0f2f24] rounded-2xl p-4 shadow-xl flex items-center justify-between text-left">
               <div className="flex items-center gap-3">
@@ -562,7 +664,7 @@ export default function App() {
                 <button
                   key={id}
                   onClick={() => setActiveFilterTag(active && id !== 'all' ? 'all' : id)}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all duration-300 font-medium cursor-pointer btn-ripple ${
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all duration-300 font-medium cursor-pointer ${
                     active
                       ? 'bg-gradient-to-r from-[#d4af6a] to-[#e8d3a0] text-[#0a1f18] font-semibold shadow-lg shadow-[#d4af6a]/30 scale-105'
                       : 'bg-[#0d251c] text-[#a8c4b8] hover:bg-[#163c30] hover:text-white border border-[#1f4a3b]'
@@ -575,38 +677,13 @@ export default function App() {
             })}
           </div>
 
-          {/* Category pills */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1 pb-0.5 border-t border-[#1a3d30]/50">
-            <button
-              onClick={() => scrollToCategory('all')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-300 ${
-                selectedCategory === 'all'
-                  ? 'bg-gradient-to-r from-[#1e4c3d] to-[#2a5f4d] text-[#f2e8cf] border border-[#d4af6a]/60 font-semibold shadow-md shadow-[#d4af6a]/10'
-                  : 'text-[#89aca0] hover:text-white hover:bg-[#0f2f24]'
-              }`}
-            >
-              Tout voir
-            </button>
-
-            {CATEGORIES.map((cat) => {
-              const isActive = selectedCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => scrollToCategory(cat.id)}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-300 ${
-                    isActive
-                      ? 'bg-gradient-to-r from-[#1e4c3d] to-[#2a5f4d] text-[#f6eed9] border border-[#d4af6a]/60 font-semibold shadow-md shadow-[#d4af6a]/10'
-                      : 'text-[#89aca0] hover:text-white hover:bg-[#0f2f24]'
-                  }`}
-                >
-                  {cat.name}
-                  {cat.isSpecialCard && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#d4af6a] animate-pulse"></span>
-                  )}
-                </button>
-              );
-            })}
+          {/* ============ AUTO-SCROLL CATEGORY CAROUSEL ============ */}
+          <div className="pt-1 border-t border-[#1a3d30]/50">
+            <CategoryCarousel
+              categories={CATEGORIES}
+              selectedCategory={selectedCategory}
+              onSelect={scrollToCategory}
+            />
           </div>
         </div>
       </div>
@@ -640,7 +717,7 @@ export default function App() {
               </p>
               <button
                 onClick={() => { setSearchTerm(''); setSelectedCategory('all'); setActiveFilterTag('all'); }}
-                className="mt-2 inline-flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-r from-[#d4af6a] to-[#e8d3a0] text-[#0a1f18] font-semibold text-xs rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 btn-ripple"
+                className="mt-2 inline-flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-r from-[#d4af6a] to-[#e8d3a0] text-[#0a1f18] font-semibold text-xs rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
               >
                 Voir tout le menu
               </button>
@@ -654,7 +731,6 @@ export default function App() {
           return (
             <RevealWrapper key={group.id} delay={groupIndex * 50}>
               <section id={`section-${group.id}`} className="scroll-mt-40">
-                {/* Category header */}
                 <div className="flex items-baseline justify-between border-b border-[#1f4a3b] pb-3 mb-5">
                   <div className="flex items-center gap-3">
                     <span className="w-2 h-2 rounded-full bg-[#d4af6a] shadow-[0_0_12px_rgba(212,175,106,0.8)]"></span>
@@ -670,7 +746,6 @@ export default function App() {
                 </div>
 
                 {isSurCommande ? (
-                  /* Special showcase */
                   <div className="relative rounded-2xl p-[1px] gradient-border overflow-hidden">
                     <div className="bg-gradient-to-br from-[#0a1f18] to-[#0f2f24] rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4">
                       <div className="flex items-center justify-between pb-3 border-b border-[#d4af6a]/20">
@@ -714,7 +789,7 @@ export default function App() {
                               </div>
                               <button
                                 onClick={() => updateOrderQty(item.id, 1)}
-                                className="flex items-center gap-1.5 bg-gradient-to-r from-[#d4af6a] to-[#e8d3a0] hover:shadow-xl hover:shadow-[#d4af6a]/30 hover:scale-105 text-[#0a2018] px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer active:scale-95 btn-ripple"
+                                className="flex items-center gap-1.5 bg-gradient-to-r from-[#d4af6a] to-[#e8d3a0] hover:shadow-xl hover:shadow-[#d4af6a]/30 hover:scale-105 text-[#0a2018] px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer active:scale-95"
                               >
                                 <Plus className="w-3.5 h-3.5" />
                                 <span>Ajouter</span>
@@ -726,7 +801,6 @@ export default function App() {
                     </div>
                   </div>
                 ) : (
-                  /* Standard items */
                   <div className="grid grid-cols-1 gap-3">
                     {group.items.map((item, i) => {
                       const quantity = tableOrder[item.id] || 0;
@@ -801,7 +875,7 @@ export default function App() {
                               ) : (
                                 <button
                                   onClick={() => updateOrderQty(item.id, 1)}
-                                  className="flex items-center gap-1 bg-[#1a4033] hover:bg-gradient-to-r hover:from-[#d4af6a] hover:to-[#e8d3a0] text-[#e0cfab] hover:text-[#0b2118] px-3 py-1.5 rounded-xl text-xs font-semibold border border-[#d4af6a]/30 hover:border-transparent transition-all duration-300 shadow-sm cursor-pointer active:scale-95 btn-ripple"
+                                  className="flex items-center gap-1 bg-[#1a4033] hover:bg-gradient-to-r hover:from-[#d4af6a] hover:to-[#e8d3a0] text-[#e0cfab] hover:text-[#0b2118] px-3 py-1.5 rounded-xl text-xs font-semibold border border-[#d4af6a]/30 hover:border-transparent transition-all duration-300 shadow-sm cursor-pointer active:scale-95"
                                 >
                                   <Plus className="w-3 h-3" />
                                   <span>Commander</span>
@@ -841,7 +915,7 @@ export default function App() {
 
             <button
               onClick={() => setIsOrderDrawerOpen(true)}
-              className="px-4 py-2.5 bg-gradient-to-r from-[#d4af6a] to-[#e8d3a0] hover:shadow-xl hover:shadow-[#d4af6a]/40 hover:scale-105 text-[#0c241c] text-xs font-bold rounded-xl transition-all duration-300 cursor-pointer btn-ripple"
+              className="px-4 py-2.5 bg-gradient-to-r from-[#d4af6a] to-[#e8d3a0] hover:shadow-xl hover:shadow-[#d4af6a]/40 hover:scale-105 text-[#0c241c] text-xs font-bold rounded-xl transition-all duration-300 cursor-pointer"
             >
               Voir le récap
             </button>
@@ -932,7 +1006,7 @@ export default function App() {
                 </button>
                 <button
                   onClick={() => setIsOrderDrawerOpen(false)}
-                  className="flex-[2] py-2.5 rounded-xl bg-gradient-to-r from-[#d4af6a] to-[#e8d3a0] text-[#0d281e] text-xs font-bold hover:shadow-lg hover:shadow-[#d4af6a]/30 transition-all duration-300 btn-ripple"
+                  className="flex-[2] py-2.5 rounded-xl bg-gradient-to-r from-[#d4af6a] to-[#e8d3a0] text-[#0d281e] text-xs font-bold hover:shadow-lg hover:shadow-[#d4af6a]/30 transition-all duration-300"
                 >
                   Continuer à parcourir
                 </button>
