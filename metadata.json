@@ -1,0 +1,6 @@
+{
+  "name": "The Ridge Restaurant - Menu",
+  "description": "Menu digital interactif pour The Ridge Restaurant - Entrées, Ojjas, Escalopes, Pâtes, Viandes, Poissons, Desserts et Boissons.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
