@@ -572,59 +572,6 @@ export default function App() {
           <p className="font-garamond italic text-[#a8c4b8] text-base sm:text-xl max-w-md mt-2 mb-7 leading-relaxed">
             Gastronomie méditerranéenne &amp; spécialités terre-mer au cœur des hauteurs
           </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full max-w-xl text-left glass border border-[#1f4a3b]/60 rounded-2xl p-3.5 shadow-2xl shadow-black/40 animate-slide-up">
-            <div className="flex items-center gap-3 px-2 py-1.5 group">
-              <div className="p-2 rounded-xl bg-[#184033] text-[#d4af6a] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                <Clock className="w-4 h-4" />
-              </div>
-              <div className="leading-tight">
-                <span className="block text-[10px] uppercase font-semibold text-[#7ea394] tracking-wider">Horaires</span>
-                <span className="text-xs text-[#f1ebdc] font-medium">12h00 — 23h30</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 px-2 py-1.5 border-t sm:border-t-0 sm:border-l border-[#1f4a3b]/60 group">
-              <div className="p-2 rounded-xl bg-[#184033] text-[#d4af6a] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                <MapPin className="w-4 h-4" />
-              </div>
-              <div className="leading-tight">
-                <span className="block text-[10px] uppercase font-semibold text-[#7ea394] tracking-wider">Adresse</span>
-                <span className="text-xs text-[#f1ebdc] font-medium">Vue Panoramique, Tunis</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 px-2 py-1.5 border-t sm:border-t-0 sm:border-l border-[#1f4a3b]/60 group">
-              <div className="p-2 rounded-xl bg-[#184033] text-emerald-400 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div className="leading-tight">
-                <span className="block text-[10px] uppercase font-semibold text-[#7ea394] tracking-wider">Service</span>
-                <span className="text-xs text-emerald-300 font-medium">Plat du jour</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-5 w-full max-w-xl rounded-2xl p-[1px] gradient-border animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            <div className="bg-gradient-to-r from-[#0f2f24] via-[#1a4033] to-[#0f2f24] rounded-2xl p-4 shadow-xl flex items-center justify-between text-left">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-[#d4af6a]/15 border border-[#d4af6a]/50 flex items-center justify-center text-[#e8d3a0] animate-pulse-glow">
-                  <ChefHat className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-cinzel text-sm font-semibold tracking-wide text-[#f5edd8]">
-                    Plat du jour
-                  </h4>
-                  <p className="font-garamond italic text-[#a8c4b8] text-xs">
-                    « Selon la fraîcheur du marché » — Demandez nos arrivages
-                  </p>
-                </div>
-              </div>
-              <span className="hidden sm:inline-block bg-[#0a1f18] text-[#d4af6a] text-[11px] font-semibold px-3 py-1 rounded-full border border-[#d4af6a]/30">
-                Pêche Locale
-              </span>
-            </div>
-          </div>
         </div>
       </section>
 
