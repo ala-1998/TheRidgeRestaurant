@@ -151,7 +151,6 @@ const RevealWrapper: React.FC<{ children: React.ReactNode; delay?: number; class
 
 /* ==========================================================================
    AUTO-SCROLL CATEGORY CAROUSEL
-   Défilement automatique infini + swipe manuel + pause au toucher
    ========================================================================== */
 const CategoryCarousel: React.FC<{
   categories: Category[];
@@ -165,18 +164,16 @@ const CategoryCarousel: React.FC<{
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const hasInitializedRef = useRef(false);
 
-  // 3 copies pour scroll infini fluide dans les deux sens
   const duplicatedCategories = useMemo(
     () => [...categories, ...categories, ...categories],
     [categories]
   );
 
-  // Animation auto-scroll
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
 
-    const speed = 0.4; // px par frame — très doux
+    const speed = 0.4;
 
     const animate = () => {
       if (!isPaused && el) {
@@ -184,11 +181,9 @@ const CategoryCarousel: React.FC<{
 
         const oneSetWidth = el.scrollWidth / 3;
 
-        // Reset invisible quand on dépasse la 2ème copie
         if (scrollPosRef.current >= oneSetWidth * 2) {
           scrollPosRef.current -= oneSetWidth;
         }
-        // Reset inverse si on remonte trop
         if (scrollPosRef.current <= 0) {
           scrollPosRef.current += oneSetWidth;
         }
@@ -205,21 +200,18 @@ const CategoryCarousel: React.FC<{
     };
   }, [isPaused]);
 
-  // Sync position quand l'utilisateur scrolle manuellement
   const handleScroll = () => {
     if (scrollRef.current) {
       scrollPosRef.current = scrollRef.current.scrollLeft;
     }
   };
 
-  // Pause temporaire + reprise auto
   const pauseTemporarily = () => {
     setIsPaused(true);
     if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
     resumeTimerRef.current = setTimeout(() => setIsPaused(false), 3000);
   };
 
-  // Position initiale au milieu (set #2)
   useEffect(() => {
     if (hasInitializedRef.current) return;
     const el = scrollRef.current;
@@ -232,7 +224,6 @@ const CategoryCarousel: React.FC<{
         scrollPosRef.current = oneSetWidth;
         hasInitializedRef.current = true;
       } else {
-        // retry si le DOM n'est pas encore prêt
         setTimeout(init, 50);
       }
     };
@@ -241,7 +232,6 @@ const CategoryCarousel: React.FC<{
 
   return (
     <div className="relative group/carousel">
-      {/* Fade edges */}
       <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-[#071712] via-[#071712]/80 to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-[#071712] via-[#071712]/80 to-transparent z-10 pointer-events-none" />
 
@@ -537,31 +527,22 @@ export default function App() {
         />
 
         <div className="relative max-w-3xl mx-auto flex flex-col items-center text-center">
-          <div className="mb-6 animate-float">
-            <svg className="w-24 h-20" viewBox="0 0 100 80" fill="none">
-              <defs>
-                <linearGradient id="mountain-grad-1" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f5e6c0" />
-                  <stop offset="100%" stopColor="#d4af6a" />
-                </linearGradient>
-                <linearGradient id="mountain-grad-2" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#1a4033" />
-                  <stop offset="100%" stopColor="#0a1f18" />
-                </linearGradient>
-              </defs>
-              <polygon points="50,8 72,75 28,75" fill="url(#mountain-grad-1)" opacity="0.95" />
-              <polygon points="50,8 72,75 50,75" fill="url(#mountain-grad-2)" opacity="0.9" />
-              <polygon points="26,28 44,75 8,75" fill="#f0e6cd" opacity="0.85" />
-              <polygon points="26,28 44,75 26,75" fill="#0a1f18" opacity="0.95" />
-              <polygon points="74,30 94,75 54,75" fill="#e3d5ad" opacity="0.85" />
-              <polygon points="74,30 94,75 74,75" fill="#0a1f18" opacity="0.95" />
-            </svg>
+          {/* LOGO IMAGE */}
+          <div className="mb-4 animate-float">
+            <img
+              src="/logo.png"
+              alt="Logo The Ridge"
+              className="w-28 h-auto object-contain drop-shadow-[0_4px_24px_rgba(212,175,106,0.35)]"
+            />
           </div>
 
-          <div className="relative inline-block mb-4">
-            <h1 className="font-cinzel text-4xl sm:text-5xl md:text-6xl tracking-[0.18em] font-bold text-[#faf4e3] uppercase drop-shadow-[0_2px_20px_rgba(212,175,106,0.3)]">
-              The Ridge
-            </h1>
+          <div className="relative inline-block mb-4 flex flex-col items-center">
+            {/* TITRE THE RIDGE IMAGE */}
+            <img
+              src="/theridge.png"
+              alt="The Ridge"
+              className="w-64 sm:w-80 md:w-96 h-auto object-contain drop-shadow-[0_2px_20px_rgba(212,175,106,0.3)]"
+            />
             <div className="mt-2 inline-block bg-gradient-to-r from-[#0f2f24] via-[#1a4033] to-[#0f2f24] border border-[#d4af6a]/40 px-7 py-1 rounded-full shadow-lg shadow-black/30">
               <p className="font-cinzel text-xs sm:text-sm tracking-[0.4em] text-[#e8d3a0] font-semibold uppercase">
                 Restaurant
@@ -569,7 +550,7 @@ export default function App() {
             </div>
           </div>
 
-          <p className="font-garamond italic text-[#a8c4b8] text-base sm:text-xl max-w-md mt-2 mb-7 leading-relaxed">
+          <p className="font-garamond italic text-[#a8c4b8] text-[10px] sm:text-sm md:text-lg mt-2 mb-7 leading-relaxed whitespace-nowrap px-2">
             Gastronomie méditerranéenne &amp; spécialités terre-mer au cœur des hauteurs
           </p>
         </div>
@@ -601,7 +582,7 @@ export default function App() {
           {/* Filter tags */}
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 text-xs">
             {[
-              { id: 'all', label: `Tous (${MENU_ITEMS.length})`, icon: null },
+              { id: 'all', label: `Tous`, icon: null },
               { id: 'fruits_de_mer', label: 'Fruits de mer', icon: Fish },
               { id: 'signature', label: 'Spécialités', icon: Sparkles },
               { id: 'sur_commande', label: 'Sur commande', icon: Star },
@@ -760,7 +741,7 @@ export default function App() {
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 space-y-1.5">
                               <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="font-garamond text-base sm:text-lg font-semibold tracking-wide text-[#fbf7ee] transition-colors group-hover:text-[#fff9e6]">
+                                <h3 className="font-cinzel-name text-base sm:text-lg font-bold tracking-wide text-[#F2DFBD] transition-colors group-hover:text-[#fff9e6]">
                                   {item.name}
                                 </h3>
                                 {item.tags?.includes('signature') && (
@@ -978,15 +959,17 @@ export default function App() {
       <footer className="mt-20 border-t border-[#1a3d30] bg-gradient-to-b from-[#050f0b] to-[#071712] py-12 px-4 text-center text-xs text-[#7f9f92] space-y-4">
         <div className="max-w-md mx-auto space-y-3">
           <div className="flex justify-center mb-2">
-            <svg className="w-12 h-9 text-[#d4af6a]/70 animate-float" viewBox="0 0 100 80" fill="currentColor">
-              <polygon points="50,10 70,75 30,75" />
-              <polygon points="28,30 45,75 10,75" />
-              <polygon points="72,32 92,75 52,75" />
-            </svg>
+            <img
+              src="/logo.png"
+              alt="Logo The Ridge"
+              className="w-11 h-auto object-contain opacity-70 animate-float"
+            />
           </div>
-          <h4 className="font-cinzel font-bold text-sm tracking-[0.3em] text-[#f5eedb] uppercase">
-            The Ridge Restaurant
-          </h4>
+          <img
+            src="/theridge.png"
+            alt="The Ridge Restaurant"
+            className="w-25 sm:w-30 h-auto object-contain mx-auto opacity-90"
+          />
           <p className="font-garamond italic text-[#9dbcb0] text-sm">
             Tous nos plats sont élaborés sur place à partir de produits frais du marché tunisien.
           </p>
