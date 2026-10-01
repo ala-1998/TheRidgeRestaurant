@@ -282,14 +282,6 @@ const ServerView: React.FC<{ orderData: ServerOrderData | null }> = ({ orderData
           </div>
         </div>
 
-        {/* Info note */}
-        <div className="bg-gradient-to-r from-[#0f2f24] to-[#163c30] border border-[#1f4a3b] rounded-xl p-3.5 flex items-start gap-2.5">
-          <Edit3 className="w-4 h-4 text-[#d4af6a] shrink-0 mt-0.5" />
-          <p className="font-garamond italic text-xs text-[#a8c4b8] leading-relaxed">
-            Ajoutez une note sous chaque plat (ex: bien cuit, sans oignons, allergies...).
-            Les notes sont sauvegardées automatiquement sur cet appareil.
-          </p>
-        </div>
 
         {/* Liste des plats avec notes */}
         <div className="space-y-3">
@@ -1040,10 +1032,6 @@ export default function App() {
                   <QRCodeSVG value={qrValue} size={220} bgColor="#ffffff" fgColor="#0a1f18" level="L" includeMargin={false} />
                 </div>
 
-                <div className="w-full mt-5 bg-[#071712] border border-[#1f4a3b] rounded-xl p-3.5">
-                  <p className="text-[10px] text-[#7ea394] uppercase tracking-wider font-semibold mb-2 text-center">Détail de la commande</p>
-                  <pre className="font-garamond text-xs text-[#d8ebd9] whitespace-pre-wrap leading-relaxed text-center">{orderTextPayload}</pre>
-                </div>
               </div>
             ) : (
               <>
